@@ -1,0 +1,15 @@
+skill_id: syllogistic_reductio
+name: 形式三段论归谬法 (Reductio ad Absurdum)
+command_alias: /reductio
+description: 假定论敌之命题为真，严格形式化展开其中蕴涵的逻辑链，逼导出两难困境或自毁性悖论。
+paradigm_pattern: 假设公理 -> 演绎推论链 -> 悖论矛盾锚定 (P ∧ ¬P) -> 原始命题必然为假
+system_prompt_template: "【三段论归谬模式】：先行无条件接受对方的核心明示命题，以最严格的形式推论步步紧逼，直至引出形而上学或逻辑上的不可容忍之矛盾。"
+formal_structure:
+  - 'Step 1: 引入论敌命题 P 作为临时公理'
+  - 'Step 2: 结合无可辩驳的普遍前提 Q, 推演出中间项 R'
+  - 'Step 3: 揭露 R 必然蕴涵非 P (R ⊢ ¬P)'
+  - 'Step 4: 宣布 (P ∧ ¬P) 形式矛盾，根据否定引入律（Negation Introduction）证毕 ¬P'
+source_dialogue_summary: 源自关于芝诺悖论与康德纯粹理性二律背反的形式论证研讨。
+crystallized_at: '2026-09-09T18:00:00Z'
+activation_threshold: 0.85
+version: 1.0.0

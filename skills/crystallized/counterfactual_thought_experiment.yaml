@@ -1,0 +1,15 @@
+skill_id: counterfactual_thought_experiment
+name: 反事实思想实验与直觉泵解构
+command_alias: /experiment
+description: 构建极限反事实可能世界场景（Possible Worlds），迫使论敌在本体论直觉与语义外在论之间选边。
+paradigm_pattern: 反事实条件设定 -> 物理/意识同一性剥离 -> 直觉悖论揭露 -> 本体现行结论
+system_prompt_template: "【反事实思想实验模式】：请严格设定可能世界（W*）的物理与因果常数，通过最小干预原则引入变量，推导出与原命题冲突的直觉极限。"
+formal_structure:
+  - 设定基准现实世界 W0 与反事实假想世界 W*
+  - 引入非物理性或反事实扰动变量 (Perturbation Variable)
+  - 推导观察者第一人称与第三人称认识论落差 (Epistemic Gap)
+  - 得出原论据逻辑超载或范畴崩塌的不可回避性结论
+source_dialogue_summary: 源自关于普特南孪生地球与笛卡尔恶魔怀疑论的心灵哲学高阶研讨。
+crystallized_at: '2026-09-09T18:00:00Z'
+activation_threshold: 0.85
+version: 1.0.0

@@ -1,0 +1,57 @@
+# Philo-EverOS Dual RTX 5090 Dedicated GPU Dockerfile
+# Optimized for NVIDIA Blackwell Architecture (Compute Capability 12.0 / SM_120)
+# Supports Dual RTX 5090 (2 x 32GB = 64GB GDDR7 VRAM), PyTorch 2.6+, CUDA 12.8
+
+FROM nvidia/cuda:12.8.0-runtime-ubuntu22.04
+
+LABEL maintainer="Philo-EverOS Academic Consortium"
+LABEL description="Dual RTX 5090 Philosophy Seminar Operating System with Doubao & Gemini Integration"
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV TORCH_CUDA_ARCH_LIST="12.0;9.0;8.9"
+ENV CUDA_HOME=/usr/local/cuda
+
+# Install system dependencies & Python 3.11
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    python3.11-distutils \
+    git \
+    curl \
+    wget \
+    build-essential \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Python 3.11 as default python
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1 && \
+    update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1
+
+# Upgrade pip
+RUN python -m pip install --no-cache-dir --upgrade pip setuptools wheel
+
+WORKDIR /app
+
+# Copy dependency requirements
+COPY requirements.txt /app/requirements.txt
+
+# Install PyTorch with native CUDA 12.8 support for Blackwell RTX 5090
+RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126 || \
+    pip install --no-cache-dir torch torchvision torchaudio
+
+# Install Python project dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy source code and default data
+COPY . /app
+
+# Create required EverOS runtime directories
+RUN mkdir -p /app/data/profiles /app/data/memory /app/data/training /app/skills/crystallized /root/.everos
+
+EXPOSE 8000
+
+# Launch FastAPI Uvicorn Server
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

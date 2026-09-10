@@ -1,0 +1,6 @@
+{
+  "name": "Philo-EverOS",
+  "description": "基于 NVIDIA RTX 5060 (NF4 量化) 及 5090 算力、豆包与 Gemini 协同的自进化数字哲学研讨平台",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
