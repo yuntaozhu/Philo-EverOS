@@ -4,7 +4,7 @@ Enforces rigorous citation standards, guards against ontic reductions, and audit
 """
 
 import re
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Optional
 
 class AcademicGuardrails:
     """Rigorous academic checker for philosophical discourse integrity."""
@@ -23,10 +23,12 @@ class AcademicGuardrails:
     ]
 
     @classmethod
-    def audit_response(cls, text: str) -> Dict[str, Any]:
+    def audit_response(cls, text: str, claim_type: Optional[str] = None) -> Dict[str, Any]:
         """Audits generated response against academic criteria."""
         issues: List[str] = []
         passed_rules: List[str] = []
+        if claim_type == "hybrid" and "信息损耗" not in text and "Information Loss" not in text:
+            issues.append("hybrid 协议要求单独写出【信息损耗 (Information Loss)】。")
 
         # 1. Check for banned clichés
         for phrase in cls.BANNED_CLICHES:

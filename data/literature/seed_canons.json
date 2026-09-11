@@ -1,0 +1,277 @@
+{
+  "documents": [
+    {
+      "id": "canon-kant-krw-b25",
+      "title": "《纯粹理性批判》(Kritik der reinen Vernunft) B25 / A11",
+      "source": "Immanuel Kant · 《纯粹理性批判》(Kritik der reinen Vernunft)",
+      "kind": "primary",
+      "term": "先验",
+      "locator": "B25 / A11",
+      "aliases": [
+        "先验",
+        "Transzendental",
+        "Transcendental",
+        "A priori",
+        "先天"
+      ],
+      "original_lang": "Deutsch",
+      "translation_edition": "邓晓芒 译 / 杨祖陶 校",
+      "text": "Immanuel Kant\n《纯粹理性批判》(Kritik der reinen Vernunft) B25 / A11\n[Deutsch]\nIch nenne alle Erkenntnis transzendental, die sich nicht sowohl mit Gegenständen, sondern mit unserer Erkenntnisart von Gegenständen, sofern diese a priori möglich sein soll, überhaupt beschäftigt.\n[中译 / 邓晓芒 译 / 杨祖陶 校]\n我把一切不是关涉于对象，而是关涉于我们关于对象、就其应当是先天可能的而言的认识方式的认识，都称为先验的。"
+    },
+    {
+      "id": "canon-kant-krw-a51",
+      "title": "《纯粹理性批判》(Kritik der reinen Vernunft) A51 / B75",
+      "source": "Immanuel Kant · 《纯粹理性批判》(Kritik der reinen Vernunft)",
+      "kind": "primary",
+      "term": "直观与概念",
+      "locator": "A51 / B75",
+      "aliases": [
+        "思想无内容则空",
+        "直观无概念则盲",
+        "Anschauung",
+        "Begriff"
+      ],
+      "original_lang": "Deutsch",
+      "translation_edition": "邓晓芒 译 / 杨祖陶 校",
+      "text": "Immanuel Kant\n《纯粹理性批判》(Kritik der reinen Vernunft) A51 / B75\n[Deutsch]\nGedanken ohne Inhalt sind leer, Anschauungen ohne Begriffe sind blind. Daher ist es ebenso notwendig, seine Begriffe sinnlich zu machen, als, seine Anschauungen sich verständlich zu machen.\n[中译 / 邓晓芒 译 / 杨祖陶 校]\n没有内容的思想是空的，没有概念的直观是盲的。"
+    },
+    {
+      "id": "canon-kant-krw-b132",
+      "title": "《纯粹理性批判》(Kritik der reinen Vernunft) B131–B132 §16",
+      "source": "Immanuel Kant · 《纯粹理性批判》(Kritik der reinen Vernunft)",
+      "kind": "primary",
+      "term": "先验统觉",
+      "locator": "B131–B132 §16",
+      "aliases": [
+        "先验统觉",
+        "Apperzeption",
+        "Ich denke",
+        "我思必须能够伴随"
+      ],
+      "original_lang": "Deutsch",
+      "translation_edition": "邓晓芒 译 / 杨祖陶 校",
+      "text": "Immanuel Kant\n《纯粹理性批判》(Kritik der reinen Vernunft) B131–B132 §16\n[Deutsch]\nDas: Ich denke, muß alle meine Vorstellungen begleiten können; denn sonst würde etwas in mir vorgestellt werden, was gar nicht gedacht werden könnte.\n[中译 / 邓晓芒 译 / 杨祖陶 校]\n‘我思’必须能够伴随我的一切表象；否则在我内部就会有根本不能被思考的表象。"
+    },
+    {
+      "id": "canon-descartes-med-2",
+      "title": "《第一哲学沉思集》(Meditationes de Prima Philosophia) Meditatio II",
+      "source": "René Descartes · 《第一哲学沉思集》(Meditationes de Prima Philosophia)",
+      "kind": "primary",
+      "term": "我思",
+      "locator": "Meditatio II",
+      "aliases": [
+        "Cogito",
+        "Cogito ergo sum",
+        "我思故我在",
+        "Res cogitans"
+      ],
+      "original_lang": "Latina",
+      "translation_edition": "庞景仁 译",
+      "text": "René Descartes\n《第一哲学沉思集》(Meditationes de Prima Philosophia) Meditatio II\n[Latina]\nEgo sum, ego existo; certum est. Sed quamdiu? Nempe quamdiu cogito; nam forte etiam fieri posset, si cessarem ab omni cogitatione, ut illico totus esse desinerem.\n[中译 / 庞景仁 译]\n我存在，这是确定的。但有多久？显然是只要我还在思维；若停止一切思维，我很可能立刻停止存在。"
+    },
+    {
+      "id": "canon-spinoza-ethica-def3",
+      "title": "《伦理学》(Ethica) I, Definitio III",
+      "source": "Baruch Spinoza · 《伦理学》(Ethica)",
+      "kind": "primary",
+      "term": "实体",
+      "locator": "I, Definitio III",
+      "aliases": [
+        "Substantia",
+        "实体",
+        "Causa sui",
+        "在自身内并通过自身被认识"
+      ],
+      "original_lang": "Latina",
+      "translation_edition": "贺麟 译",
+      "text": "Baruch Spinoza\n《伦理学》(Ethica) I, Definitio III\n[Latina]\nPer substantiam intelligo id, quod in se est, et per se concipitur: hoc est id, cujus conceptus non indiget conceptu alterius rei, a quo formari debeat.\n[中译 / 贺麟 译]\n按实体，我理解为在自身内并通过自身被认识的东西；它的概念并不需要借助于他物的概念来形成。"
+    },
+    {
+      "id": "canon-spinoza-ethica-prop14",
+      "title": "《伦理学》(Ethica) I, Propositio XIV",
+      "source": "Baruch Spinoza · 《伦理学》(Ethica)",
+      "kind": "primary",
+      "term": "神即自然",
+      "locator": "I, Propositio XIV",
+      "aliases": [
+        "Deus sive Natura",
+        "神即自然",
+        "实体的唯一性"
+      ],
+      "original_lang": "Latina",
+      "translation_edition": "贺麟 译",
+      "text": "Baruch Spinoza\n《伦理学》(Ethica) I, Propositio XIV\n[Latina]\nPraeter Deum nulla dari neque concipi potest substantia.\n[中译 / 贺麟 译]\n除神以外，既不能有实体，也不能设想实体。"
+    },
+    {
+      "id": "canon-aristotle-cat-2a11",
+      "title": "《范畴篇》(Categoriae) 2a11–2a19",
+      "source": "Aristotle · 《范畴篇》(Categoriae)",
+      "kind": "primary",
+      "term": "第一本体",
+      "locator": "2a11–2a19",
+      "aliases": [
+        "Ousia",
+        "Οὐσία",
+        "第一本体",
+        "第二本体",
+        "tode ti"
+      ],
+      "original_lang": "Ἑλληνική",
+      "translation_edition": "方书春 译 / 范畴篇标准编号",
+      "text": "Aristotle\n《范畴篇》(Categoriae) 2a11–2a19\n[Ἑλληνική]\nΟὐσία δέ ἐστιν ἡ κυριώτατά τε καὶ πρώτως καὶ μάλιστα λεγομένη, ἣ μήτε καθ᾽ ὑποκειμένου τινὸς λέγεται μήτε ἐν ὑποκειμένῳ τινί ἐστιν, οἷον ὁ τὶς ἄνθρωπος ἢ ὁ τὶς ἵππος. Δεύτεραι οὐσίαι λέγονται τὰ εἴδη, ἐν οἷς αἱ πρώτως οὐσίαι λεγόμεναι ὑπάρχουσιν.\n[中译 / 方书春 译 / 范畴篇标准编号]\n最严格、第一义且最主要所谓的本体，既不述说一个主体，也不在一个主体之中，例如某一个人和某一匹马。第二本体则指那些种，第一本体即存在于其中。"
+    },
+    {
+      "id": "canon-aristotle-meta-zeta",
+      "title": "《形而上学》(Metaphysica) Zeta 1028b",
+      "source": "Aristotle · 《形而上学》(Metaphysica)",
+      "kind": "primary",
+      "term": "本体",
+      "locator": "Zeta 1028b",
+      "aliases": [
+        "Ousia",
+        "Οὐσία",
+        "作为存在的存在",
+        "To on"
+      ],
+      "original_lang": "Ἑλληνική",
+      "translation_edition": "苗力田 译",
+      "text": "Aristotle\n《形而上学》(Metaphysica) Zeta 1028b\n[Ἑλληνική]\nΚαὶ δὴ καὶ τὸ πάλαι τε καὶ νῦν καὶ ἀεὶ ζητούμενον καὶ ἀεὶ ἀπορούμενον, τί τὸ ὄν, τοῦτό ἐστι τίς ἡ οὐσία.\n[中译 / 苗力田 译]\n从古至今一直被探索、却始终令人困惑的问题：‘何为存在’，归根结底就是‘何为本体（Ousia）’。"
+    },
+    {
+      "id": "canon-hume-enquiry-4",
+      "title": "An Enquiry Concerning Human Understanding §IV–V",
+      "source": "David Hume · An Enquiry Concerning Human Understanding",
+      "kind": "primary",
+      "term": "因果性",
+      "locator": "§IV–V",
+      "aliases": [
+        "恒常联结",
+        "constant conjunction",
+        "休谟问题",
+        "因果律"
+      ],
+      "original_lang": "English",
+      "translation_edition": "关文运 译",
+      "text": "David Hume\nAn Enquiry Concerning Human Understanding §IV–V\n[English]\nAll inferences from experience, therefore, are effects of custom, not of reasoning. There is no necessary connexion discoverable between cause and effect; we experience only constant conjunction.\n[中译 / 关文运 译]\n一切从经验得出的推论都是习惯的结果，而非理性的结果。因与果之间并不存在可被发现的必然联结，我们所经历的只是恒常联结。"
+    },
+    {
+      "id": "canon-hegel-phg-vorrede",
+      "title": "《精神现象学》(Phänomenologie des Geistes) Vorrede",
+      "source": "G. W. F. Hegel · 《精神现象学》(Phänomenologie des Geistes)",
+      "kind": "primary",
+      "term": "扬弃",
+      "locator": "Vorrede",
+      "aliases": [
+        "Aufhebung",
+        "扬弃",
+        "实体即主体",
+        "真理是全体"
+      ],
+      "original_lang": "Deutsch",
+      "translation_edition": "先刚 译 / 贺麟 译本对勘",
+      "text": "G. W. F. Hegel\n《精神现象学》(Phänomenologie des Geistes) Vorrede\n[Deutsch]\nDas Wahre ist das Ganze. Das Wahre ist aber das Ganze nur als das sich durch seine Entwicklung vollendende Wesen. Das Wahre ist nicht nur als Substanz, sondern ebensosehr als Subjekt aufzufassen.\n[中译 / 先刚 译 / 贺麟 译本对勘]\n真理是全体。但真理只有作为通过其发展而完成自身的存在才是全体。真理不仅必须被把握为实体，而且同样必须被把握为主体。"
+    },
+    {
+      "id": "canon-wittgenstein-tlp-1",
+      "title": "《逻辑哲学论》(Tractatus Logico-Philosophicus) 1 / 1.1",
+      "source": "Ludwig Wittgenstein · 《逻辑哲学论》(Tractatus Logico-Philosophicus)",
+      "kind": "primary",
+      "term": "事态",
+      "locator": "1 / 1.1",
+      "aliases": [
+        "Tractatus",
+        "Sachverhalt",
+        "世界是事实的总和"
+      ],
+      "original_lang": "Deutsch",
+      "translation_edition": "韩林合 译",
+      "text": "Ludwig Wittgenstein\n《逻辑哲学论》(Tractatus Logico-Philosophicus) 1 / 1.1\n[Deutsch]\n1 Die Welt ist alles, was der Fall ist.\n1.1 Die Welt ist die Gesamtheit der Tatsachen, nicht der Dinge.\n[中译 / 韩林合 译]\n1 世界是所有发生的事情。1.1 世界是事实的总和，而不是事物的总和。"
+    },
+    {
+      "id": "canon-wittgenstein-tlp-7",
+      "title": "《逻辑哲学论》(Tractatus Logico-Philosophicus) 7",
+      "source": "Ludwig Wittgenstein · 《逻辑哲学论》(Tractatus Logico-Philosophicus)",
+      "kind": "primary",
+      "term": "沉默",
+      "locator": "7",
+      "aliases": [
+        "darüber muß man schweigen",
+        "不可言说"
+      ],
+      "original_lang": "Deutsch",
+      "translation_edition": "韩林合 译",
+      "text": "Ludwig Wittgenstein\n《逻辑哲学论》(Tractatus Logico-Philosophicus) 7\n[Deutsch]\nWovon man nicht sprechen kann, darüber muß man schweigen.\n[中译 / 韩林合 译]\n凡是不可言说者，就必须对之保持沉默。"
+    },
+    {
+      "id": "canon-heidegger-sz-9",
+      "title": "《存在与时间》(Sein und Zeit) §9",
+      "source": "Martin Heidegger · 《存在与时间》(Sein und Zeit)",
+      "kind": "primary",
+      "term": "此在",
+      "locator": "§9",
+      "aliases": [
+        "Dasein",
+        "此在",
+        "Existenz",
+        "Jemeinigkeit",
+        "向来我属性"
+      ],
+      "original_lang": "Deutsch",
+      "translation_edition": "陈嘉映 / 王庆节 译",
+      "text": "Martin Heidegger\n《存在与时间》(Sein und Zeit) §9\n[Deutsch]\nDas »Wesen« des Daseins liegt in seiner Existenz. Die an diesem Seienden herauszustellenden Charaktere sind daher nicht vorhandene »Eigenschaften« eines so und so »aussehenden« vorhandenen Seienden, sondern je ihm mögliche Weisen zu sein.\n[中译 / 陈嘉映 / 王庆节 译]\n此在的‘本质’在于它的生存。在这个存在者身上所能展示的特征不是现成存在者的现成性质，而是它去存在的各种可能方式。"
+    },
+    {
+      "id": "canon-heidegger-sz-12",
+      "title": "《存在与时间》(Sein und Zeit) §12",
+      "source": "Martin Heidegger · 《存在与时间》(Sein und Zeit)",
+      "kind": "primary",
+      "term": "在世界之中存在",
+      "locator": "§12",
+      "aliases": [
+        "In-der-Welt-sein",
+        "Vorhandenheit",
+        "Zuhandenheit",
+        "现成存在",
+        "上手"
+      ],
+      "original_lang": "Deutsch",
+      "translation_edition": "陈嘉映 / 王庆节 译",
+      "text": "Martin Heidegger\n《存在与时间》(Sein und Zeit) §12\n[Deutsch]\nDas In-der-Welt-sein ist eine notwendige a priori Verfassung des Daseins.\n[中译 / 陈嘉映 / 王庆节 译]\n在世界之中存在是此在的一种先天存在建构。"
+    },
+    {
+      "id": "canon-husserl-lu6-14",
+      "title": "《逻辑研究》(Logische Untersuchungen) VI, §14–§16",
+      "source": "Edmund Husserl · 《逻辑研究》(Logische Untersuchungen)",
+      "kind": "primary",
+      "term": "意向充实",
+      "locator": "VI, §14–§16",
+      "aliases": [
+        "Erfüllung",
+        "意向充实",
+        "Intentionale Erfüllung",
+        "意义意向"
+      ],
+      "original_lang": "Deutsch",
+      "translation_edition": "倪梁康 译",
+      "text": "Edmund Husserl\n《逻辑研究》(Logische Untersuchungen) VI, §14–§16\n[Deutsch]\nErfüllung nennen wir die Synthesis der Identifikation, in welcher die Bedeutungsintention mit der entsprechenden Anschauung zur Deckung kommt.\n[中译 / 倪梁康 译]\n充实是同一性综合：空乏的意义意向与相应直观在其中达到重合。"
+    },
+    {
+      "id": "canon-husserl-ideen-31",
+      "title": "《纯粹现象学通论》(Ideen I) §31–§32",
+      "source": "Edmund Husserl · 《纯粹现象学通论》(Ideen I)",
+      "kind": "primary",
+      "term": "悬搁",
+      "locator": "§31–§32",
+      "aliases": [
+        "Epoché",
+        "悬搁",
+        "现象学还原",
+        "Natürliche Einstellung"
+      ],
+      "original_lang": "Deutsch",
+      "translation_edition": "倪梁康 译",
+      "text": "Edmund Husserl\n《纯粹现象学通论》(Ideen I) §31–§32\n[Deutsch]\nWir setzen die Generalthesis der natürlichen Einstellung außer Aktion, wir klammern alles ein, was sie in ontischer Hinsicht umfaßt.\n[中译 / 倪梁康 译]\n我们把自然态度的总设定置于行动之外，将其在存在者状态方面所包含的一切放入括号。"
+    }
+  ],
+  "count": 16
+}

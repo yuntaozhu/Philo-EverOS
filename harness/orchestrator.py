@@ -13,7 +13,15 @@ from skills.builtin import (
     CrossSystemCompareSkill
 )
 from everos_bridge.memory_engine import EverOSMemoryEngine
+from everos_bridge.sidecar_client import format_search_hits, get_everos_sidecar
 from harness.guardrails import AcademicGuardrails
+from harness.protocol import (
+    ResearchSessionStore,
+    detect_claim_type,
+    protocol_instruction,
+    strip_claim_prefix,
+)
+from literature.store import LiteratureStore
 
 SEMINAR_CORE_SYSTEM_PROMPT = """你是一位精通西方哲学史（从前苏格拉底到后现代）、当代分析哲学、欧陆现象学与诠释学、以及东方哲学（先秦诸子与佛学中观/唯识）的资深哲学教授与学术研讨导师。你的职责是以最高标准的学术严谨性，与师生共同解构命题、审查形式论证、考订核心概念，并引导批判性思考。
 
@@ -35,6 +43,10 @@ class AcademicOrchestrator:
     def __init__(self, memory_engine: Optional[EverOSMemoryEngine] = None):
         self.memory_engine = memory_engine or EverOSMemoryEngine()
         self.guardrails = AcademicGuardrails()
+        self.sessions = ResearchSessionStore()
+        self.literature = LiteratureStore()
+        self.sidecar = get_everos_sidecar()
+        self.last_claim_type = "phil"
 
         # Register builtin skills
         self.builtin_skills: Dict[str, BaseSkill] = {
@@ -69,7 +81,8 @@ class AcademicOrchestrator:
     def synthesize_prompt(
         self,
         messages: List[Dict[str, str]],
-        user_id: str = "default_scholar"
+        user_id: str = "default_scholar",
+        claim_type: Optional[str] = None,
     ) -> List[Dict[str, str]]:
         """
         Assembles OpenAI-format message array into an augmented seminar prompt:
@@ -81,11 +94,23 @@ class AcademicOrchestrator:
                 last_user_message = m.get("content", "")
                 break
 
-        # 1. Detect skill and extract clean proposition
-        active_skill, clean_query = self.detect_active_skill(last_user_message)
+        state = self.sessions.load(user_id)
+        resolved_claim = detect_claim_type(
+            last_user_message,
+            explicit=claim_type or state.get("claim_type"),
+        )
+        if last_user_message.strip().lower().startswith(("/claim ", "/protocol ")):
+            self.sessions.lock_claim_type(user_id, resolved_claim)
+        skill_source = strip_claim_prefix(last_user_message)
 
-        # 2. Get EverOS memory injection (Profile + Consensus Graph)
+        # 1. Detect skill and extract clean proposition
+        active_skill, clean_query = self.detect_active_skill(skill_source)
+
+        # 2. Local consensus + official sidecar episodes + literature (not axioms)
         everos_context = self.memory_engine.build_context_injection(clean_query, user_id=user_id)
+        sidecar_block = format_search_hits(self.sidecar.search(clean_query, user_id=user_id))
+        literature_block = self.literature.format_hits(self.literature.search(clean_query))
+        protocol_block = protocol_instruction(resolved_claim)
 
         # 3. Formulate skill directive
         skill_instruction = ""
@@ -95,7 +120,7 @@ class AcademicOrchestrator:
             # Check if matching crystallized skill
             crystallized = self.memory_engine.crystallizer.crystallized_skills
             for c_id, c_skill in crystallized.items():
-                if last_user_message.startswith(c_skill.command_alias):
+                if skill_source.startswith(c_skill.command_alias):
                     skill_instruction = (
                         f"\n\n【当前激活 EverOS 自进化技能：{c_skill.name} ({c_skill.command_alias})】\n"
                         f"{c_skill.system_prompt_template}\n"
@@ -105,9 +130,13 @@ class AcademicOrchestrator:
 
         complete_system_prompt = (
             f"{SEMINAR_CORE_SYSTEM_PROMPT}\n\n"
-            f"{everos_context}"
+            f"{protocol_block}\n\n"
+            f"{everos_context}\n"
+            f"{sidecar_block}"
+            f"{literature_block}"
             f"{skill_instruction}"
         )
+        self.last_claim_type = resolved_claim
 
         # 4. Assemble final messages
         processed_messages = [{"role": "system", "content": complete_system_prompt}]
@@ -115,9 +144,10 @@ class AcademicOrchestrator:
         for m in messages:
             if m.get("role") == "system":
                 continue  # Replaced by our master system prompt
-            elif m.get("role") == "user" and m.get("content") == last_user_message and active_skill:
-                # Provide cleaned query to avoid clutter
-                processed_messages.append({"role": "user", "content": clean_query or last_user_message})
+            elif m.get("role") == "user" and m.get("content") == last_user_message and (
+                active_skill or skill_source != last_user_message
+            ):
+                processed_messages.append({"role": "user", "content": clean_query or skill_source})
             else:
                 processed_messages.append(m)
 

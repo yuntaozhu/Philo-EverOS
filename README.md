@@ -145,6 +145,65 @@ python main.py
 
 ### 5.3 接入 Open WebUI
 在 Open WebUI 设置中添加自定义 OpenAI 连接：
-- **API URL**: `http://127.0.0.1:8000/v1`
-- **API Key**: `philo-everos` (或任意非空字符串)
-- **Model Name**: `Philo-EverOS-5090`
+- **API URL**: `http://127.0.0.1:8000/v1`（先连 FastAPI，不要连 `:3000` 的 Express 网关）
+- **API Key**: `philo-everos`（任意非空字符串）
+- **Model id (5060 / 中文默认)**: `qwen2.5:7b` 或目录中的 `brie-v2-3b` / `Qwen2.5-Phil`
+- **Model id (5090 / 英文 Fireball)**: `fireball-philosopher` 或 `Fireball-12B-philosophers`
+
+同一张卡只驻留一个权重。`serve_philo.py`、Ollama 32B 与本仓库的 in-process HuggingFace **不要叠在一起**；叠卡会掉到 CPU（1–3 tok/s）。覆盖检查：`ALLOW_GPU_SHARE=1`。
+
+### 5.4 RTX 5060 优先路径（推荐先跑通）
+FastAPI **不占 GPU**。本地模型交给 llama.cpp 或 Ollama，再由本仓库转发：
+
+```bash
+# Ollama 示例
+ollama pull qwen2.5:7b
+
+# .env
+TARGET_HARDWARE=RTX_5060
+LOCAL_LLM_BASE_URL=http://127.0.0.1:11434/v1
+LOCAL_LLM_MODEL=qwen2.5:7b
+PROMPT_FORMAT=chatml
+
+python main.py
+```
+
+8GB/16GB 5060 复现不了 5090 上 Fireball BF16（约 24GB）。中文默认用 Qwen；不要把 Fireball 当中文主力。
+
+### 5.5 RTX 5090 / Fireball
+已验证的 spike：`C:\philo_env\philosophy_models\Fireball-12B`，Alpaca 模板（`### Instruction` / `### Response:`），**禁止** `[INST]`。
+
+```bash
+TARGET_HARDWARE=RTX_5090
+MODEL_PATH=C:\philo_env\philosophy_models\Fireball-12B
+PHILOSOPHY_MODEL=Fireball-12B-philosophers
+PROMPT_FORMAT=alpaca
+# 不要同时设置 LOCAL_LLM_BASE_URL，否则不会加载 HF 权重
+```
+
+Fireball 英文学术向；中文浅。当前以 **RTX 5060 单卡** 为主：同一时刻只驻留一只本地模型。加卡后再做双专家分流。回归题见 `scripts/regression_prompts.md`。
+
+Express `:3000` 的 `/v1/chat/completions` 只转发到 `PYTHON_BACKEND_URL`（默认 `http://localhost:8000`）。未启动 `python main.py` 时前端会 502，而不会再编造康德/海德格尔范文。
+
+### 5.6 官方 EverOS sidecar、文献库、分科协议
+记忆服务是 **独立进程**，不要把 EverOS 源码合进本仓库。
+
+```bash
+# 另开终端，官方 EverOS 绑到 8100，避免和 FastAPI :8000 冲突
+everos server start --port 8100
+
+# .env
+EVEROS_SIDECAR_URL=http://127.0.0.1:8100
+```
+
+对话结束后本仓库会调用 `/api/v2/memory/add` + `/flush`；检索走 `/search`。sidecar 没起来时研讨照常，只用本地共识 JSON。
+
+文献（原典 / codebook）进 **本地索引**；有 Qdrant + `ARK_API_KEY` 时同一批再写入向量库。共识公理不进文献库。
+
+```bash
+python scripts/ingest_literature.py
+```
+
+种子共 16 条短摘录（康德 B25/A51/B132、笛卡尔沉思二、斯宾诺莎《伦理学》I Def.3 / P14、亚里士多德《范畴篇》2a11 与《形而上学》Z、休谟 Enquiry IV、黑格尔序言、维特根斯坦 TLP 1/7、海德格尔 §9/§12、胡塞尔 LU VI / Ideen §31）。检索先走 Qdrant，不可达则用本地关键词。
+
+命题类型：`phil` / `soc` / `hybrid`。可用 `POST /v1/harness/session` 锁定，或在对话里写 `/claim hybrid`。hybrid **必须**单列【信息损耗 (Information Loss)】。

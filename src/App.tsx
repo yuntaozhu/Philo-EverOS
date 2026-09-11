@@ -143,7 +143,7 @@ export function App() {
   };
 
   // Chat message sending with SSE stream reading
-  const handleSendMessage = async (content: string, skillPrefix?: string, model?: string) => {
+  const handleSendMessage = async (content: string, skillPrefix?: string, model?: string, claimType?: string) => {
     const userMsg: ChatMessage = {
       id: `usr-${Date.now().toString(36)}`,
       role: "user",
@@ -172,7 +172,8 @@ export function App() {
         body: JSON.stringify({
           model: model || "Philo-EverOS-Dual5090",
           messages: newHistory.map(m => ({ role: m.role, content: m.content })),
-          stream: true
+          stream: true,
+          claim_type: claimType || "phil"
         })
       });
 

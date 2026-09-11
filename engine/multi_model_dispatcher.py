@@ -7,9 +7,7 @@ Orchestrates:
 4. Hybrid MoE (多模型协同研讨范式)
 """
 
-import os
 import json
-import time
 import logging
 from typing import List, Dict, Any, Optional, AsyncGenerator, Generator
 from config.settings import settings
@@ -31,7 +29,20 @@ class MultiModelDispatcher:
 
     def get_available_engines(self) -> List[Dict[str, Any]]:
         """Returns the list of available model engines and their operational status on RTX 5060."""
-        return [
+        engines: List[Dict[str, Any]] = []
+        if settings.local_llm_base_url:
+            engines.append({
+                "id": settings.local_llm_model,
+                "name": f"Remote local engine ({settings.local_llm_model})",
+                "hardware": settings.local_llm_base_url,
+                "base": "llama.cpp / Ollama / vLLM",
+                "precision": "remote-openai",
+                "role": "5060-first path: FastAPI does not load HF weights",
+                "status": "active",
+                "is_local": True,
+                "recommended_5060": True,
+            })
+        engines.extend([
             {
                 "id": "brie-v2-3b",
                 "name": "brie-v2-3b / Qwen2.5-Phil (3B~7B)",
@@ -46,9 +57,9 @@ class MultiModelDispatcher:
             },
             {
                 "id": "Veritas-12B",
-                "name": "Veritas-12B (Mistral/NeMo 12B)",
+                "name": "Veritas-12B (Gemma 3 12B)",
                 "hardware": "RTX 5060 (BitsAndBytes 4-bit NF4)",
-                "base": "Mistral/NeMo 基座",
+                "base": "Gemma 3 12B",
                 "vram_5060": "从 24GB 压缩至 7.5GB",
                 "precision": "4-bit NF4 + bfloat16 SDPA",
                 "role": "专门针对伦理困境、哲学论证分析、概念解构微调，严格反讽与逻辑质询",
@@ -58,9 +69,9 @@ class MultiModelDispatcher:
             },
             {
                 "id": "Semancer-12B",
-                "name": "Semancer-12B (Llama-3 12B)",
+                "name": "Semancer-12B (Gemma 4 12B)",
                 "hardware": "RTX 5060 (BitsAndBytes 4-bit NF4)",
-                "base": "Llama-3 基座",
+                "base": "Gemma 4 12B",
                 "vram_5060": "从 24GB 压缩至 7.5GB",
                 "precision": "4-bit NF4 + bfloat16 SDPA",
                 "role": "400+ 哲学深度研讨对话集微调，专攻存在主义、本体论、心灵哲学与决定论",
@@ -70,9 +81,9 @@ class MultiModelDispatcher:
             },
             {
                 "id": "Fireball-12B-philosophers",
-                "name": "Fireball-12B-philosophers (Llama-3.1 12B)",
+                "name": "Fireball-12B-philosophers (Mistral-Nemo 12B)",
                 "hardware": "RTX 5060 (BitsAndBytes 4-bit NF4)",
-                "base": "Llama-3.1 基座",
+                "base": "Mistral-Nemo 12B",
                 "vram_5060": "从 24GB 压缩至 7.5GB",
                 "precision": "4-bit NF4 + bfloat16 SDPA",
                 "role": "科学哲学、数学哲学、认识论 (Epistemology) 及经典哲学家著作微调",
@@ -105,7 +116,8 @@ class MultiModelDispatcher:
                 "status": "active",
                 "is_local": False
             }
-        ]
+        ])
+        return engines
 
     async def stream_doubao_completion(
         self,
@@ -116,20 +128,9 @@ class MultiModelDispatcher:
         """Streams completion from Volcengine Doubao API."""
         if not self.doubao_api_key:
             yield (
-                "\n[豆包大模型提示]: 检测到未配置 `ARK_API_KEY` 或 `DOUBAO_API_KEY`。"
-                "请在服务器 `.env` 文件中设置火山引擎 API Key 和 Endpoint ID 即可无缝激活！\n"
+                "\n[豆包未配置] 缺少 `ARK_API_KEY`。/etymology 在无密钥时回退本地模型；"
+                "请在 `.env` 写入火山引擎 Key 后再选择 doubao-pro。\n"
             )
-            # Simulated high-grade response for testing
-            sample = (
-                "【火山引擎 豆包哲学勘订协同】\n\n"
-                "基于古希腊语 *Οὐσία* 及德文 *Dasein* 的中文哲学翻译脉络，在此做出权威对勘：\n\n"
-                "1. **邓晓芒译本对勘**：康德《纯粹理性批判》中 *Transzendental* 严格界定为【先验】而非【先天】（A priori）。\n"
-                "2. **陈嘉映译本对勘**：海德格尔《存在与时间》中 *Dasein* 译为【此在】，突出其‘去存在（Zu-sein）’与生存论结构。\n\n"
-                "**苏格拉底反思**：若汉语中‘存在’常被预设为现成客观实体，我们在用汉语研讨海德格尔时，如何防范本源性的语言视差？"
-            )
-            for chunk in sample.split(" "):
-                yield chunk + " "
-                time.sleep(0.03)
             return
 
         import httpx
@@ -176,19 +177,8 @@ class MultiModelDispatcher:
         """Streams completion from Google Gemini API."""
         if not self.gemini_api_key:
             yield (
-                "\n[Gemini 协同提示]: 检测到未配置 `GEMINI_API_KEY`。"
-                "请在服务器环境变量中配置 Gemini API Key 以启用百万 Token 原典分析！\n"
+                "\n[Gemini 未配置] 缺少 `GEMINI_API_KEY`。请在 `.env` 写入密钥后再选择 gemini-2.5-flash。\n"
             )
-            sample = (
-                "【Google Gemini 宏观图谱协同】\n\n"
-                "已将输入命题置入西方认识论与现象学长程演变图谱进行拓扑投影：\n"
-                "从巴门尼德‘思与存在同一’，到斯宾诺莎‘神即自然（Deus sive Natura）’实体一元论，"
-                "这一推论构成了反击笛卡尔心物二元论的关键环节。\n\n"
-                "**苏格拉底反思**：若实体的无数属性中人类仅能领会思维与广延，那么不可知属性的存在，是否从根基上动摇了理性主义的自足性？"
-            )
-            for chunk in sample.split(" "):
-                yield chunk + " "
-                time.sleep(0.03)
             return
 
         import httpx

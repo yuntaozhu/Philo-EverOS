@@ -24,7 +24,7 @@ import { SemanticTopologyMap } from "./SemanticTopologyMap";
 
 interface SeminarTerminalProps {
   messages: ChatMessage[];
-  onSendMessage: (content: string, skillPrefix?: string, model?: string) => Promise<void>;
+  onSendMessage: (content: string, skillPrefix?: string, model?: string, claimType?: string) => Promise<void>;
   isLoading: boolean;
   onOpenSFT: (instruction: string, output: string) => void;
   onOpenDPO: (instruction: string, output: string) => void;
@@ -73,6 +73,7 @@ export const SeminarTerminal: React.FC<SeminarTerminalProps> = ({
   const [input, setInput] = useState("");
   const [activeSkillPrefix, setActiveSkillPrefix] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<string>("brie-v2-3b");
+  const [claimType, setClaimType] = useState<string>("phil");
   const [highlightEnabled, setHighlightEnabled] = useState(true);
   const [showTopology, setShowTopology] = useState(true);
   const [expandedTraceIds, setExpandedTraceIds] = useState<string[]>([]);
@@ -109,7 +110,7 @@ export const SeminarTerminal: React.FC<SeminarTerminalProps> = ({
 
     const sent = finalContent;
     setInput("");
-    await onSendMessage(sent, activeSkillPrefix, selectedModel);
+    await onSendMessage(sent, activeSkillPrefix, selectedModel, claimType);
   };
 
   const handleQuickPreset = (presetText: string, prefix: string) => {
@@ -224,13 +225,32 @@ export const SeminarTerminal: React.FC<SeminarTerminalProps> = ({
 
         {/* Citations Count */}
         <div className="text-[11px] font-mono text-stone-500 hidden md:block">
-          当前算力: RTX 5060 (Blackwell) · 4-bit NF4 量化极速驻留
+          当前算力: RTX 5060 单卡 · 只驻留一只本地模型
         </div>
       </div>
 
       {/* Mode / Skill Switcher Bar */}
       <div className="bg-stone-100/70 border-b border-stone-200 px-4 py-1.5 flex flex-wrap items-center gap-1.5 text-xs">
         <span className="text-stone-500 font-serif mr-1 text-[11px]">方法论指令:</span>
+        {[
+          { id: "phil", label: "phil 哲学" },
+          { id: "soc", label: "soc 社科" },
+          { id: "hybrid", label: "hybrid 须写信息损耗" },
+        ].map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => setClaimType(item.id)}
+            className={`px-2.5 py-0.5 rounded text-xs font-mono transition-colors ${
+              claimType === item.id
+                ? "bg-emerald-900 text-emerald-100 font-medium"
+                : "bg-white text-stone-700 border border-stone-200 hover:bg-stone-100"
+            }`}
+          >
+            {item.label}
+          </button>
+        ))}
+        <span className="text-stone-300 mx-1">|</span>
         {[
           { prefix: "", label: "自由研讨 (Seminar)" },
           { prefix: "/deconstruct", label: "/deconstruct 论证重构" },

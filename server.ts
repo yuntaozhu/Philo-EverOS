@@ -6,6 +6,39 @@ import { createServer as createViteServer } from "vite";
 
 const app = express();
 const PORT = 3000;
+const PYTHON_BACKEND_URL = process.env.PYTHON_BACKEND_URL || "http://localhost:8000";
+
+async function proxyJsonToPython(req: express.Request, res: express.Response, pathname: string) {
+  const upstream = await fetch(`${PYTHON_BACKEND_URL}${pathname}`, {
+    method: req.method,
+    headers: {
+      "Content-Type": "application/json",
+      ...(req.headers.authorization ? { Authorization: String(req.headers.authorization) } : {}),
+    },
+    body: req.method === "GET" || req.method === "HEAD" ? undefined : JSON.stringify(req.body ?? {}),
+  });
+
+  const contentType = upstream.headers.get("content-type") || "application/json";
+  res.status(upstream.status);
+  res.setHeader("Content-Type", contentType);
+  if (contentType.includes("text/event-stream")) {
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+  }
+
+  if (!upstream.body) {
+    const text = await upstream.text();
+    return res.send(text);
+  }
+
+  const reader = upstream.body.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    res.write(value);
+  }
+  return res.end();
+}
 
 app.use(express.json());
 
@@ -692,13 +725,12 @@ $$C_1 \\wedge T_1 \\wedge T_2 \\vdash C: \\text{“我思故我（作为思维�
 
 // Health & Metadata (RTX 5060 Single-Card Blackwell Optimization)
 app.get("/api/health", async (req, res) => {
-  const pythonBackendUrl = process.env.PYTHON_BACKEND_URL || "http://localhost:8000";
   let pythonTelemetry: any = null;
 
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 1200);
-    const pyRes = await fetch(`${pythonBackendUrl}/v1/engine/telemetry`, { signal: controller.signal });
+    const pyRes = await fetch(`${PYTHON_BACKEND_URL}/v1/engine/telemetry`, { signal: controller.signal });
     clearTimeout(timeoutId);
     if (pyRes.ok) {
       pythonTelemetry = await pyRes.json();
@@ -774,7 +806,19 @@ app.post("/api/hardware/switch-model", (req, res) => {
 });
 
 // OpenAI Compatible Models endpoint
-app.get("/v1/models", (req, res) => {
+app.get("/v1/models", async (req, res) => {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000);
+    const pyRes = await fetch(`${PYTHON_BACKEND_URL}/v1/models`, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (pyRes.ok) {
+      return res.json(await pyRes.json());
+    }
+  } catch {
+    // FastAPI offline — serve the static catalog so the React terminal still lists engines.
+  }
+
   const localList = Object.values(PHILOSOPHY_MODELS_INFO).map((m) => ({
     id: m.id,
     object: "model",
@@ -819,248 +863,20 @@ app.get("/v1/models", (req, res) => {
   });
 });
 
-// OpenAI Compatible Chat Completions (Supports SSE Streaming & Non-streaming)
+// OpenAI Compatible Chat Completions — proxy to FastAPI (no Gemini hijack, no canned essays)
 app.post("/v1/chat/completions", async (req, res) => {
   try {
-    const { messages, stream = false, model = "Philo-EverOS-Dual5090" } = req.body;
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    if (!req.body?.messages || !Array.isArray(req.body.messages) || req.body.messages.length === 0) {
       return res.status(400).json({ error: "Missing messages array in payload" });
     }
-
-    const lastUserMessage = [...messages].reverse().find(m => m.role === "user")?.content || "";
-    const systemPrompt = buildMasterSystemPrompt(lastUserMessage);
-    const modelChoice = (model || "").toLowerCase();
-
-    // 1. Route to Doubao if requested
-    if (modelChoice.includes("doubao")) {
-      const arkApiKey = process.env.ARK_API_KEY;
-      const endpointId = process.env.DOUBAO_ENDPOINT_ID || "doubao-pro-32k";
-      const baseUrl = process.env.DOUBAO_BASE_URL || "https://ark.cn-beijing.volces.com/api/v3";
-
-      if (stream) {
-        res.setHeader("Content-Type", "text/event-stream");
-        res.setHeader("Cache-Control", "no-cache");
-        res.setHeader("Connection", "keep-alive");
-        const responseId = `chatcmpl-${Date.now().toString(36)}`;
-
-        if (!arkApiKey) {
-          const guideMsg = `【火山引擎 豆包大模型 (Doubao Pro) 协同提示】\n\n检测到服务器未配置 \`ARK_API_KEY\`。请在服务器 \`.env\` 文件中配置火山引擎 API Key 与 Endpoint ID 即可激活！\n\n` +
-            `**模拟原典对勘示范**：\n` +
-            `• 康德《纯粹理性批判》(B25/A11) 中 *Transzendental* 依邓晓芒教授权威译本，严格译为【先验】而非【先天的】（A priori）。\n` +
-            `• 海德格尔《存在与时间》(§9) 中 *Dasein* 依陈嘉映先生译本，严格译为【此在】，突出其存在先于本质与生存论构型。\n\n` +
-            `**苏格拉底反思**：在汉语自然语言语境中，“存在”常隐含现成实体预设，我们在使用汉语研讨现象学时，应当如何悬搁这一词源偏见？`;
-
-          for (const word of guideMsg.split(" ")) {
-            const ssePayload = {
-              id: responseId,
-              object: "chat.completion.chunk",
-              created: Math.floor(Date.now() / 1000),
-              model: "doubao-pro",
-              choices: [{ index: 0, delta: { content: word + " " }, finish_reason: null }]
-            };
-            res.write(`data: ${JSON.stringify(ssePayload)}\n\n`);
-          }
-          res.write(`data: ${JSON.stringify({ id: responseId, object: "chat.completion.chunk", created: Math.floor(Date.now() / 1000), model: "doubao-pro", choices: [{ index: 0, delta: {}, finish_reason: "stop" }] })}\n\n`);
-          res.write("data: [DONE]\n\n");
-          return res.end();
-        }
-
-        try {
-          const arkResponse = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${arkApiKey}`
-            },
-            body: JSON.stringify({
-              model: endpointId,
-              messages: [{ role: "system", content: systemPrompt }, ...messages],
-              stream: true,
-              temperature: 0.7
-            })
-          });
-
-          if (!arkResponse.ok || !arkResponse.body) {
-            throw new Error(`Volcengine Ark returned HTTP ${arkResponse.status}`);
-          }
-
-          // @ts-ignore
-          const reader = arkResponse.body.getReader();
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            res.write(value);
-          }
-          return res.end();
-        } catch (e: any) {
-          const errPayload = {
-            id: responseId,
-            object: "chat.completion.chunk",
-            created: Math.floor(Date.now() / 1000),
-            model: "doubao-pro",
-            choices: [{ index: 0, delta: { content: `\n[Doubao Error: ${e.message}]` }, finish_reason: "stop" }]
-          };
-          res.write(`data: ${JSON.stringify(errPayload)}\n\n`);
-          res.write("data: [DONE]\n\n");
-          return res.end();
-        }
-      }
-    }
-
-    // 2. Default: Google Gemini or RTX 5060 Local Dedicated Philosophy Inference Engine
-    const targetModelMeta = PHILOSOPHY_MODELS_INFO[model] || PHILOSOPHY_MODELS_INFO[currentActiveLocalModel] || PHILOSOPHY_MODELS_INFO["brie-v2-3b"];
-    const effectiveSystemPrompt = `${systemPrompt}\n\n【本地微调模型专精注入】:\n${targetModelMeta.persona_system}`;
-
-    if (stream) {
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-
-      const responseId = `chatcmpl-${Date.now().toString(36)}`;
-
-      // If GEMINI_API_KEY is available, use real Gemini 2.5 streaming
-      if (process.env.GEMINI_API_KEY) {
-        try {
-          const ai = getGemini();
-          const formattedHistory = messages
-            .filter(m => m.role !== "system")
-            .map(m => ({
-              role: m.role === "assistant" ? "model" : "user",
-              parts: [{ text: m.content }]
-            }));
-
-          const streamResponse = await ai.models.generateContentStream({
-            model: "gemini-2.5-flash",
-            contents: formattedHistory,
-            config: {
-              systemInstruction: effectiveSystemPrompt,
-              temperature: 0.7
-            }
-          });
-
-          for await (const chunk of streamResponse) {
-            const textChunk = chunk.text;
-            if (textChunk) {
-              const ssePayload = {
-                id: responseId,
-                object: "chat.completion.chunk",
-                created: Math.floor(Date.now() / 1000),
-                model: model,
-                choices: [
-                  {
-                    index: 0,
-                    delta: { content: textChunk },
-                    finish_reason: null
-                  }
-                ]
-              };
-              res.write(`data: ${JSON.stringify(ssePayload)}\n\n`);
-            }
-          }
-
-          const endPayload = {
-            id: responseId,
-            object: "chat.completion.chunk",
-            created: Math.floor(Date.now() / 1000),
-            model: model,
-            choices: [{ index: 0, delta: {}, finish_reason: "stop" }]
-          };
-          res.write(`data: ${JSON.stringify(endPayload)}\n\n`);
-          res.write("data: [DONE]\n\n");
-          return res.end();
-        } catch (streamErr: any) {
-          console.warn("Gemini stream error, falling back to RTX 5060 local inference simulation:", streamErr?.message);
-        }
-      }
-
-      // High-Fidelity RTX 5060 Local Philosophy Engine Inference Generator
-      const localResponseText = generateHighFidelityPhilosophicalReply(lastUserMessage, targetModelMeta);
-
-      const words = localResponseText.split(/(\s+|\n+)/);
-      for (const token of words) {
-        if (!token) continue;
-        const ssePayload = {
-          id: responseId,
-          object: "chat.completion.chunk",
-          created: Math.floor(Date.now() / 1000),
-          model: targetModelMeta.id,
-          choices: [
-            {
-              index: 0,
-              delta: { content: token },
-              finish_reason: null
-            }
-          ]
-        };
-        res.write(`data: ${JSON.stringify(ssePayload)}\n\n`);
-        await new Promise(r => setTimeout(r, 12));
-      }
-
-      const finishPayload = {
-        id: responseId,
-        object: "chat.completion.chunk",
-        created: Math.floor(Date.now() / 1000),
-        model: targetModelMeta.id,
-        choices: [{ index: 0, delta: {}, finish_reason: "stop" }]
-      };
-      res.write(`data: ${JSON.stringify(finishPayload)}\n\n`);
-      res.write("data: [DONE]\n\n");
-      return res.end();
-    } else {
-      // Non-streaming completion
-      let replyText = "";
-      if (process.env.GEMINI_API_KEY) {
-        try {
-          const ai = getGemini();
-          const formattedHistory = messages
-            .filter(m => m.role !== "system")
-            .map(m => ({
-              role: m.role === "assistant" ? "model" : "user",
-              parts: [{ text: m.content }]
-            }));
-
-          const result = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: formattedHistory,
-            config: {
-              systemInstruction: effectiveSystemPrompt,
-              temperature: 0.7
-            }
-          });
-          replyText = result.text || "";
-        } catch (e: any) {
-          console.warn("Gemini non-stream error:", e?.message);
-        }
-      }
-
-      if (!replyText) {
-        replyText = generateHighFidelityPhilosophicalReply(lastUserMessage, targetModelMeta);
-      }
-
-      res.json({
-        id: `chatcmpl-${Date.now().toString(36)}`,
-        object: "chat.completion",
-        created: Math.floor(Date.now() / 1000),
-        model: targetModelMeta.id,
-        choices: [
-          {
-            index: 0,
-            message: {
-              role: "assistant",
-              content: replyText
-            },
-            finish_reason: "stop"
-          }
-        ]
-      });
-    }
+    return await proxyJsonToPython(req, res, "/v1/chat/completions");
   } catch (error: any) {
-    console.error("Chat completions error:", error);
-    res.status(500).json({
+    console.error("Python backend proxy error:", error);
+    return res.status(502).json({
       error: {
-        message: error.message || "Internal server error during philosophical inference",
-        type: "inference_error"
-      }
+        message: `Cannot reach FastAPI at ${PYTHON_BACKEND_URL}. Start python main.py. ${error?.message || ""}`,
+        type: "backend_unavailable",
+      },
     });
   }
 });
@@ -1546,12 +1362,20 @@ const CODEBASE_FILES = [
   "engine/model_loader.py",
   "engine/multi_model_dispatcher.py",
   "engine/streamer.py",
+  "engine/prompt_adapters.py",
+  "engine/local_client.py",
+  "engine/gpu_lock.py",
+  "engine/route.py",
   "everos_bridge/academic_profile.py",
   "everos_bridge/consensus_graph.py",
   "everos_bridge/skill_crystallizer.py",
   "everos_bridge/memory_engine.py",
+  "everos_bridge/sidecar_client.py",
   "harness/orchestrator.py",
   "harness/guardrails.py",
+  "harness/protocol.py",
+  "literature/embeddings.py",
+  "literature/store.py",
   "skills/base.py",
   "skills/builtin/argument_deconstruct.py",
   "skills/builtin/etymology_tracker.py",

@@ -3,10 +3,11 @@ EverOS Core Memory Engine
 Orchestrates Hippocampal Long-term Memory, Collective Consensus Graph, and Skill Crystallizer.
 """
 
-from typing import Dict, Any, Optional, Tuple
-from .academic_profile import AcademicProfileManager, AcademicProfile
-from .consensus_graph import ConsensusGraph, ConsensusNode
-from .skill_crystallizer import SkillCrystallizer, CrystallizedSkill
+from typing import Dict, Any, Optional
+from .academic_profile import AcademicProfileManager
+from .consensus_graph import ConsensusGraph
+from .skill_crystallizer import SkillCrystallizer
+from .sidecar_client import get_everos_sidecar
 
 class EverOSMemoryEngine:
     """Unified bridge to EverOS evolutionary memory mechanisms."""
@@ -54,8 +55,25 @@ class EverOSMemoryEngine:
             assistant_response=assistant_response
         )
 
+        sidecar = get_everos_sidecar()
+        sidecar_status = "disabled"
+        if sidecar.enabled:
+            session_id = f"seminar-{user_id}"
+            added = sidecar.add(
+                session_id,
+                [
+                    {"role": "user", "content": user_message},
+                    {"role": "assistant", "content": assistant_response},
+                ],
+                user_id=user_id,
+                defer_extraction=True,
+            )
+            flushed = sidecar.flush(session_id)
+            sidecar_status = "written" if added or flushed else "unreachable"
+
         return {
             "crystallized_new_skill": new_skill.skill_id if new_skill else None,
             "profile_user_id": user_id,
-            "status": "memory_persisted"
+            "status": "memory_persisted",
+            "everos_sidecar": sidecar_status,
         }

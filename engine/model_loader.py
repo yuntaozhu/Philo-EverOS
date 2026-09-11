@@ -16,7 +16,8 @@ logging.basicConfig(level=logging.INFO)
 PHILOSOPHY_MODELS = {
     "brie-v2-3b": {
         "name": "brie-v2-3b (Qwen2.5 欧陆现象学)",
-        "base": "Qwen2.5 3B",
+        "base": "Qwen2.5-3B-Instruct",
+        "prompt_format": "chatml",
         "features": "针对欧陆哲学（现象学、存在主义、批判理论）语料进行 LoRA 注入训练，文风极具欧陆哲学思辨色彩。",
         "5060_mode": "FP16/BF16 全精度 (显存约 6~7GB，5060 原生零量化首选)",
         "params": "3B",
@@ -25,31 +26,35 @@ PHILOSOPHY_MODELS = {
     "Qwen2.5-Phil": {
         "name": "Qwen2.5-Phil (7B 欧陆思辨微调)",
         "base": "Qwen2.5 7B",
+        "prompt_format": "chatml",
         "features": "欧陆哲学体系化微调，胡塞尔/海德格尔/萨特经典概念深入辨析。",
         "5060_mode": "4-bit NF4 量化 (显存约 4.8GB) 或 16G 版 BF16",
         "params": "7B",
         "recommended_for_5060": True
     },
     "Veritas-12B": {
-        "name": "Veritas-12B (Mistral/NeMo 基座)",
-        "base": "Mistral/NeMo 12B",
+        "name": "Veritas-12B (Gemma 3 12B)",
+        "base": "Gemma 3 12B",
+        "prompt_format": "gemma",
         "features": "专门针对伦理困境、哲学论证分析、概念解构微调。擅长用严格的哲学框架进行反讽与逻辑质询。",
         "5060_mode": "4-bit NF4 强化量化 (显存从 24GB 压制至 7.5GB，5060 顺利起飞)",
         "params": "12B",
         "recommended_for_5060": True
     },
     "Semancer-12B": {
-        "name": "Semancer-12B (Llama-3 基座)",
-        "base": "Llama-3 12B",
+        "name": "Semancer-12B (Gemma 4 12B)",
+        "base": "Gemma 4 12B",
+        "prompt_format": "gemma",
         "features": "使用 400+ 哲学深度研讨对话集微调，专攻存在主义、本体论、心灵哲学与决定论等硬核议题。",
         "5060_mode": "4-bit NF4 强化量化 (显存压缩至约 7.5GB)",
         "params": "12B",
         "recommended_for_5060": True
     },
     "Fireball-12B-philosophers": {
-        "name": "Fireball-12B-philosophers (Llama-3.1 基座)",
-        "base": "Llama-3.1 12B",
-        "features": "使用科学哲学、数学哲学、认识论 (Epistemology) 及经典哲学家著作微调。",
+        "name": "Fireball-12B-philosophers (Mistral-Nemo 12B)",
+        "base": "Mistral-Nemo 12B",
+        "prompt_format": "alpaca",
+        "features": "使用科学哲学、数学哲学、认识论 (Epistemology) 及经典哲学家著作微调。英文深度优于中文。",
         "5060_mode": "4-bit NF4 强化量化 (显存压缩至约 7.5GB)",
         "params": "12B",
         "recommended_for_5060": True
@@ -85,6 +90,8 @@ class ModelLoader:
         self.current_quantization = "none"
         self.active_model_id = settings.active_philosophy_model
 
+        self.backend_mode = "uninitialized"
+        self.block_reason: Optional[str] = None
         self._load_model()
         self.__class__._initialized = True
 
@@ -95,6 +102,18 @@ class ModelLoader:
         return cls._instance
 
     def _load_model(self):
+        if settings.local_llm_base_url:
+            logger.info(
+                "[Engine] LOCAL_LLM_BASE_URL=%s — skipping in-process weight load (5060/Ollama path).",
+                settings.local_llm_base_url,
+            )
+            self.is_simulation = False
+            self.is_ready = True
+            self.backend_mode = "remote-openai"
+            self.current_quantization = "remote-openai"
+            self._probe_cuda_telemetry_only()
+            return
+
         try:
             import torch
             from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
@@ -121,6 +140,20 @@ class ModelLoader:
                     }
                 ]
                 self.current_quantization = "4bit-nf4" if is_12b else "bfloat16"
+                self.backend_mode = "simulation"
+                return
+
+            from engine.gpu_lock import GpuOccupiedError, assert_can_load_inprocess_weights
+
+            try:
+                assert_can_load_inprocess_weights()
+            except GpuOccupiedError as occupied:
+                logger.error("[gpu_lock] %s", occupied)
+                self.is_simulation = False
+                self.is_ready = False
+                self.backend_mode = "blocked"
+                self.current_quantization = "blocked"
+                self.block_reason = str(occupied)
                 return
 
             available_gpus = torch.cuda.device_count()
@@ -214,9 +247,10 @@ class ModelLoader:
 
             self.model.eval()
             self.is_ready = True
+            self.backend_mode = "inprocess-hf"
             logger.info(
-                f"[RTX 5060 Engine Ready] Model {self.model_path} initialized successfully. "
-                f"Mode: {self.current_quantization} | Blackwell Native SDPA Enabled."
+                f"[Engine Ready] Model {self.model_path} initialized. "
+                f"Mode: {self.current_quantization} | backend={self.backend_mode}"
             )
 
         except Exception as e:
@@ -224,11 +258,47 @@ class ModelLoader:
             logger.info("[Hardware Engine] Activating high-precision simulation fallback runner.")
             self.is_simulation = True
             self.is_ready = True
+            self.backend_mode = "simulation"
+            self.block_reason = str(e)
+
+    def _probe_cuda_telemetry_only(self) -> None:
+        try:
+            import torch
+            if not torch.cuda.is_available():
+                return
+            self.detected_gpus = []
+            for i in range(torch.cuda.device_count()):
+                props = torch.cuda.get_device_properties(i)
+                self.detected_gpus.append({
+                    "index": i,
+                    "name": props.name,
+                    "vram_total_gb": round(props.total_memory / (1024 ** 3), 2),
+                    "status": "delegated" if self.backend_mode == "remote-openai" else "ready",
+                })
+        except Exception as exc:
+            logger.info("[Engine] CUDA probe skipped: %s", exc)
 
     def get_hardware_telemetry(self) -> Dict[str, Any]:
         """Returns real-time hardware status customized for RTX 5060."""
+        extra = {
+            "backend_mode": getattr(self, "backend_mode", "unknown"),
+            "block_reason": getattr(self, "block_reason", None),
+            "local_llm_base_url": settings.local_llm_base_url,
+            "prompt_format": self.resolve_prompt_format(),
+        }
         try:
             import torch
+            if self.backend_mode == "blocked":
+                return {"is_simulation": False, "is_ready": False, **extra}
+            if self.backend_mode == "remote-openai":
+                return {
+                    "is_simulation": False,
+                    "is_ready": True,
+                    "target_hardware": settings.target_hardware,
+                    "active_model": settings.local_llm_model,
+                    "gpus": self.detected_gpus,
+                    **extra,
+                }
             if not torch.cuda.is_available() or self.is_simulation:
                 is_12b = any(k in self.model_path for k in ["12B", "12b", "Veritas", "Semancer", "Fireball"])
                 vram_used = 7350 if is_12b else 5600
@@ -254,7 +324,8 @@ class ModelLoader:
                     "total_vram_gb": round(total_vram / 1024, 1),
                     "precision": "4-bit NF4 + bfloat16 SDPA" if is_12b else "torch.bfloat16 + SDPA",
                     "offload_to_cpu": False,
-                    "tokens_per_sec": "48~58 tokens/s"
+                    "tokens_per_sec": "48~58 tokens/s",
+                    **extra,
                 }
 
             devices_info = []
@@ -284,13 +355,35 @@ class ModelLoader:
                 "gpus": devices_info,
                 "total_vram_gb": round(total_vram_mb / 1024, 1),
                 "precision": f"{self.current_quantization} + Native SDPA",
-                "offload_to_cpu": False
+                "offload_to_cpu": False,
+                **extra,
             }
         except Exception as e:
-            return {"error": str(e), "is_simulation": True}
+            return {"error": str(e), "is_simulation": True, **extra}
 
     def get_model_and_tokenizer(self):
         return self.model, self.tokenizer
+
+    def resolve_prompt_format(self) -> str:
+        from engine.prompt_adapters import infer_prompt_format
+
+        catalog = PHILOSOPHY_MODELS.get(self.active_model_id) or {}
+        hinted = catalog.get("prompt_format")
+        explicit = settings.prompt_format
+        if explicit and str(explicit).lower() not in ("", "auto"):
+            return infer_prompt_format(
+                model_id=self.active_model_id or "",
+                model_path=self.model_path,
+                explicit=explicit,
+                tokenizer=self.tokenizer,
+            )
+        if hinted:
+            return hinted
+        return infer_prompt_format(
+            model_id=self.active_model_id or "",
+            model_path=self.model_path,
+            tokenizer=self.tokenizer,
+        )
 
     def get_supported_models(self) -> Dict[str, Any]:
         return PHILOSOPHY_MODELS
